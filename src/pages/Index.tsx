@@ -220,7 +220,27 @@ const Index = () => {
     }
   }, [formData.purchasedServices, currentService]);
 
-  // Get current sections based on whether services are selected and which service is active
+  // Get all sections that will be shown based on selected services
+  const getAllApplicableSections = () => {
+    if (currentSection === 0) {
+      return sections; // Service selection only
+    }
+    
+    // Combine all sections from selected services
+    const allSections = [];
+    formData.purchasedServices.forEach(service => {
+      if (serviceSections[service]) {
+        allSections.push(...serviceSections[service].map(section => ({
+          ...section,
+          serviceName: service
+        })));
+      }
+    });
+    
+    return allSections;
+  };
+
+  // Get current sections for the active service
   const getCurrentSections = () => {
     if (currentSection === 0) {
       return sections; // Service selection
@@ -233,6 +253,7 @@ const Index = () => {
     return [];
   };
 
+  const allApplicableSections = getAllApplicableSections();
   const currentSections = getCurrentSections();
   const sectionIndex = currentSection === 0 ? 0 : currentSection - 1;
 
@@ -241,15 +262,48 @@ const Index = () => {
   };
 
   const calculateProgress = () => {
-    const totalFields = Object.keys(initialFormData).length;
-    const filledFields = Object.entries(formData).filter(([key, value]) => {
-      if (Array.isArray(value)) return value.length > 0;
-      if (typeof value === 'string') return value.trim() !== '';
-      if (typeof value === 'number') return value > 0;
-      return false;
-    }).length;
+    // Only calculate progress after services are selected
+    if (formData.purchasedServices.length === 0) {
+      return 0;
+    }
     
-    return Math.round((filledFields / totalFields) * 100);
+    // Count only relevant fields based on selected services
+    let totalRequiredFields = 5; // Basic fields (companyName, contactName, email, etc.)
+    let filledRequiredFields = 0;
+    
+    // Basic fields
+    if (formData.companyName.trim() !== '') filledRequiredFields++;
+    if (formData.contactName.trim() !== '') filledRequiredFields++;
+    if (formData.email.trim() !== '') filledRequiredFields++;
+    if (formData.specificBusinessType.trim() !== '') filledRequiredFields++;
+    if (formData.companyWebsite.trim() !== '') filledRequiredFields++;
+    
+    // Add service-specific fields to count
+    formData.purchasedServices.forEach(service => {
+      if (service === 'SMS AI') {
+        totalRequiredFields += 6; // SMS specific fields
+        if (formData.smsOperationType.trim() !== '') filledRequiredFields++;
+        if (formData.smsIntroMessages.length > 0) filledRequiredFields++;
+        if (formData.smsQualificationFlow.trim() !== '') filledRequiredFields++;
+        if (formData.smsObjective.trim() !== '') filledRequiredFields++;
+        if (formData.smsPersona.trim() !== '') filledRequiredFields++;
+        if (formData.smsFAQs.trim() !== '') filledRequiredFields++;
+      }
+      
+      if (service === 'Inbound Voice AI' || service === 'Outbound Voice AI') {
+        totalRequiredFields += 8; // Voice AI specific fields
+        if (formData.agentType.trim() !== '') filledRequiredFields++;
+        if (formData.mainPurpose.trim() !== '') filledRequiredFields++;
+        if (formData.currentCallProcess.trim() !== '') filledRequiredFields++;
+        if (formData.successCriteria.trim() !== '') filledRequiredFields++;
+        if (formData.companyServices.trim() !== '') filledRequiredFields++;
+        if (formData.successDefinition.trim() !== '') filledRequiredFields++;
+        if (formData.aiName.trim() !== '') filledRequiredFields++;
+        if (formData.voiceGender.trim() !== '') filledRequiredFields++;
+      }
+    });
+    
+    return Math.round((filledRequiredFields / totalRequiredFields) * 100);
   };
 
   const saveProgress = () => {
@@ -295,10 +349,10 @@ const Index = () => {
           </div>
           
           <h2 className="text-2xl md:text-4xl font-audiowide text-bright-white mb-2">
-            Voice AI Discovery Form
+            AI Agent Onboarding Form
           </h2>
           <p className="text-base md:text-xl text-soft-lavender mb-4 md:mb-6 font-manrope px-4">
-            Help us build your custom voice AI agent
+            Help us build your custom AI agent
           </p>
           
           {/* Progress Bar */}
@@ -339,7 +393,7 @@ const Index = () => {
           <div className="w-full lg:w-80 flex-shrink-0 order-2 lg:order-1">
             <Card className="p-4 md:p-6 lg:sticky lg:top-4 bg-charcoal-black/80 border-2 border-purple-grape backdrop-blur-sm">
               <h3 className="font-audiowide text-neon-aqua mb-4 neon-text text-sm md:text-base">
-                {currentSection === 0 ? 'Form Sections' : `${currentService} Sections`}
+                {currentSection === 0 ? 'Form Sections' : 'All Required Sections'}
               </h3>
               
               {/* Show service indicator when working on specific service */}
@@ -356,28 +410,55 @@ const Index = () => {
               
               <ScrollArea className="h-64 lg:h-96">
                 <div className="space-y-2">
-                  {currentSections.map((section, index) => (
-                    <div key={section.id}>
-                      <button
-                        onClick={() => currentSection === 0 ? setCurrentSection(index) : setCurrentSection(index + 1)}
-                        className={`w-full text-left p-2 md:p-3 rounded-lg transition-all duration-300 font-manrope border text-xs md:text-sm ${
-                          (currentSection === 0 && index === 0) || (currentSection > 0 && index === sectionIndex)
-                            ? 'bg-neon-aqua text-charcoal-black border-neon-aqua font-semibold shadow-lg'
-                            : 'bg-charcoal-black/60 border-purple-grape text-bright-white hover:bg-deep-violet hover:border-neon-aqua hover:text-bright-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{section.title}</span>
-                          {completedSections.has(index) && (
-                            <div className="w-4 h-4 md:w-5 md:h-5 bg-cyber-yellow rounded-full flex items-center justify-center">
-                              <ChevronRight className="w-2 h-2 md:w-3 md:h-3 text-charcoal-black" />
+                  {allApplicableSections.map((section, index) => {
+                    const isCurrentSection = currentSection === 0 
+                      ? index === 0 
+                      : (currentSection > 0 && currentService === section.serviceName && 
+                         index - formData.purchasedServices.findIndex(s => s === currentService) * (serviceSections[currentService]?.length || 0) === sectionIndex);
+                    
+                    return (
+                      <div key={`${section.serviceName || 'service'}-${section.id}`}>
+                        {/* Service header when starting a new service */}
+                        {section.serviceName && index > 0 && 
+                         allApplicableSections[index - 1]?.serviceName !== section.serviceName && (
+                          <div className="mt-4 mb-2 px-2">
+                            <div className="text-xs font-audiowide text-hot-magenta border-b border-hot-magenta/30 pb-1">
+                              {section.serviceName}
                             </div>
-                          )}
-                        </div>
-                      </button>
-                      {index < currentSections.length - 1 && <Separator className="my-2 bg-purple-grape" />}
-                    </div>
-                  ))}
+                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => {
+                            if (currentSection === 0) {
+                              setCurrentSection(index);
+                            } else if (section.serviceName) {
+                              setCurrentService(section.serviceName);
+                              const serviceIndex = formData.purchasedServices.findIndex(s => s === section.serviceName);
+                              setCurrentServiceIndex(serviceIndex);
+                              const sectionInService = serviceSections[section.serviceName]?.findIndex(s => s.id === section.id) || 0;
+                              setCurrentSection(sectionInService + 1);
+                            }
+                          }}
+                          className={`w-full text-left p-2 md:p-3 rounded-lg transition-all duration-300 font-manrope border text-xs md:text-sm ${
+                            isCurrentSection
+                              ? 'bg-neon-aqua text-charcoal-black border-neon-aqua font-semibold shadow-lg'
+                              : 'bg-charcoal-black/60 border-purple-grape text-bright-white hover:bg-deep-violet hover:border-neon-aqua hover:text-bright-white'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{section.title}</span>
+                            {completedSections.has(index) && (
+                              <div className="w-4 h-4 md:w-5 md:h-5 bg-cyber-yellow rounded-full flex items-center justify-center">
+                                <ChevronRight className="w-2 h-2 md:w-3 md:h-3 text-charcoal-black" />
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                        {index < allApplicableSections.length - 1 && <Separator className="my-2 bg-purple-grape" />}
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </Card>
