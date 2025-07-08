@@ -1,4 +1,4 @@
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FormData } from '@/pages/Index';
@@ -22,18 +22,25 @@ const SMSFunctionality = ({ formData, updateFormData }: SMSFunctionalityProps) =
         <div className="space-y-6">
           <div>
             <Label className="text-bright-white font-manrope font-medium mb-4 block">
-              SMS AI Operation Type
+              SMS AI Operation Type (Select all that apply)
             </Label>
-            <RadioGroup
-              value={formData.smsOperationType || ''}
-              onValueChange={(value) => updateFormData({ smsOperationType: value })}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               <div className="flex items-center space-x-3 p-4 rounded-lg border border-purple-grape bg-charcoal-black/40">
-                <RadioGroupItem 
-                  value="outbound-leads" 
+                <Checkbox 
                   id="outbound-leads"
-                  className="border-neon-aqua text-neon-aqua"
+                  checked={Array.isArray(formData.smsOperationType) 
+                    ? formData.smsOperationType.includes('outbound-leads') 
+                    : formData.smsOperationType === 'outbound-leads'}
+                  onCheckedChange={(checked) => {
+                    const currentTypes = Array.isArray(formData.smsOperationType) 
+                      ? formData.smsOperationType 
+                      : formData.smsOperationType ? [formData.smsOperationType] : [];
+                    const updatedTypes = checked 
+                      ? [...currentTypes, 'outbound-leads']
+                      : currentTypes.filter(type => type !== 'outbound-leads');
+                    updateFormData({ smsOperationType: updatedTypes });
+                  }}
+                  className="border-neon-aqua data-[state=checked]:bg-neon-aqua data-[state=checked]:text-charcoal-black"
                 />
                 <Label htmlFor="outbound-leads" className="text-bright-white font-manrope cursor-pointer">
                   <div>
@@ -46,10 +53,21 @@ const SMSFunctionality = ({ formData, updateFormData }: SMSFunctionalityProps) =
               </div>
 
               <div className="flex items-center space-x-3 p-4 rounded-lg border border-purple-grape bg-charcoal-black/40">
-                <RadioGroupItem 
-                  value="form-followup" 
+                <Checkbox 
                   id="form-followup"
-                  className="border-neon-aqua text-neon-aqua"
+                  checked={Array.isArray(formData.smsOperationType) 
+                    ? formData.smsOperationType.includes('form-followup') 
+                    : formData.smsOperationType === 'form-followup'}
+                  onCheckedChange={(checked) => {
+                    const currentTypes = Array.isArray(formData.smsOperationType) 
+                      ? formData.smsOperationType 
+                      : formData.smsOperationType ? [formData.smsOperationType] : [];
+                    const updatedTypes = checked 
+                      ? [...currentTypes, 'form-followup']
+                      : currentTypes.filter(type => type !== 'form-followup');
+                    updateFormData({ smsOperationType: updatedTypes });
+                  }}
+                  className="border-neon-aqua data-[state=checked]:bg-neon-aqua data-[state=checked]:text-charcoal-black"
                 />
                 <Label htmlFor="form-followup" className="text-bright-white font-manrope cursor-pointer">
                   <div>
@@ -60,7 +78,7 @@ const SMSFunctionality = ({ formData, updateFormData }: SMSFunctionalityProps) =
                   </div>
                 </Label>
               </div>
-            </RadioGroup>
+            </div>
           </div>
 
           <div>

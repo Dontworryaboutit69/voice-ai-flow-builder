@@ -28,7 +28,7 @@ export interface FormData {
   purchasedServices: string[];
   
   // SMS AI Specific
-  smsOperationType: string;
+  smsOperationType: string[];
   smsAdditionalContext: string;
   smsIntroMessages: string[];
   smsQualificationFlow: string;
@@ -97,7 +97,7 @@ export interface FormData {
 const initialFormData: FormData = {
   purchasedServices: [],
   // SMS AI fields
-  smsOperationType: '',
+  smsOperationType: [],
   smsAdditionalContext: '',
   smsIntroMessages: [],
   smsQualificationFlow: '',
@@ -305,7 +305,7 @@ const Index = () => {
     formData.purchasedServices.forEach(service => {
       if (service === 'SMS AI') {
         totalRequiredFields += 6; // SMS specific fields
-        if (formData.smsOperationType.trim() !== '') filledRequiredFields++;
+        if (formData.smsOperationType.length > 0) filledRequiredFields++;
         if (formData.smsIntroMessages.length > 0) filledRequiredFields++;
         if (formData.smsQualificationFlow.trim() !== '') filledRequiredFields++;
         if (formData.smsObjective.trim() !== '') filledRequiredFields++;
