@@ -17,10 +17,25 @@ import AgentKnowledge from '@/components/form-sections/AgentKnowledge';
 import SuccessMetrics from '@/components/form-sections/SuccessMetrics';
 import VoicePreferences from '@/components/form-sections/VoicePreferences';
 import ServiceSelection from '@/components/form-sections/ServiceSelection';
+import SMSFunctionality from '@/components/form-sections/SMSFunctionality';
+import SMSIntroMessages from '@/components/form-sections/SMSIntroMessages';
+import SMSFlow from '@/components/form-sections/SMSFlow';
+import SMSObjective from '@/components/form-sections/SMSObjective';
+import SMSKnowledge from '@/components/form-sections/SMSKnowledge';
 
 export interface FormData {
   // Service Selection
   purchasedServices: string[];
+  
+  // SMS AI Specific
+  smsOperationType: string;
+  smsAdditionalContext: string;
+  smsIntroMessages: string[];
+  smsQualificationFlow: string;
+  smsObjective: string;
+  smsPersona: string;
+  smsFAQs: string;
+  smsWebsiteUrl: string;
   
   // Basic Information
   companyName: string;
@@ -81,6 +96,16 @@ export interface FormData {
 
 const initialFormData: FormData = {
   purchasedServices: [],
+  // SMS AI fields
+  smsOperationType: '',
+  smsAdditionalContext: '',
+  smsIntroMessages: [],
+  smsQualificationFlow: '',
+  smsObjective: '',
+  smsPersona: '',
+  smsFAQs: '',
+  smsWebsiteUrl: '',
+  // Other fields
   companyName: '',
   specificBusinessType: '',
   companyWebsite: '',
@@ -127,12 +152,14 @@ const sections = [
   { id: 'services', title: 'Service Selection', component: ServiceSelection },
 ];
 
-// Service-specific sections that will be dynamically shown
 const serviceSections = {
   'SMS AI': [
     { id: 'sms-basic', title: 'Basic Information', component: BasicInformation },
-    { id: 'sms-purpose', title: 'SMS AI Purpose', component: VoiceAIPurpose },
-    // Add more SMS-specific sections here
+    { id: 'sms-functionality', title: 'SMS Functionality', component: SMSFunctionality },
+    { id: 'sms-intro', title: 'Intro Messages', component: SMSIntroMessages },
+    { id: 'sms-flow', title: 'Qualification Flow', component: SMSFlow },
+    { id: 'sms-objective', title: 'Objective & Persona', component: SMSObjective },
+    { id: 'sms-knowledge', title: 'Knowledge Base', component: SMSKnowledge },
   ],
   'Inbound Voice AI': [
     { id: 'inbound-basic', title: 'Basic Information', component: BasicInformation },
