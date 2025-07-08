@@ -15,8 +15,12 @@ import CustomerExperience from '@/components/form-sections/CustomerExperience';
 import AgentKnowledge from '@/components/form-sections/AgentKnowledge';
 import SuccessMetrics from '@/components/form-sections/SuccessMetrics';
 import VoicePreferences from '@/components/form-sections/VoicePreferences';
+import ServiceSelection from '@/components/form-sections/ServiceSelection';
 
 export interface FormData {
+  // Service Selection
+  purchasedServices: string[];
+  
   // Basic Information
   companyName: string;
   specificBusinessType: string;
@@ -75,6 +79,7 @@ export interface FormData {
 }
 
 const initialFormData: FormData = {
+  purchasedServices: [],
   companyName: '',
   specificBusinessType: '',
   companyWebsite: '',
@@ -118,6 +123,7 @@ const initialFormData: FormData = {
 };
 
 const sections = [
+  { id: 'services', title: 'Service Selection', component: ServiceSelection },
   { id: 'basic', title: 'Basic Information', component: BasicInformation },
   { id: 'purpose', title: 'Voice AI Purpose', component: VoiceAIPurpose },
   { id: 'process', title: 'Call Process & Flow', component: CallProcess },
