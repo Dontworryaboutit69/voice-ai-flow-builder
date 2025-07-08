@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronRight, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -137,6 +138,7 @@ const sections = [
 const Index = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [currentSection, setCurrentSection] = useState(0);
+  const [currentService, setCurrentService] = useState<string>('');
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -160,6 +162,13 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, [formData]);
+
+  // Set current service when services are selected
+  useEffect(() => {
+    if (formData.purchasedServices.length > 0 && !currentService) {
+      setCurrentService(formData.purchasedServices[0]);
+    }
+  }, [formData.purchasedServices, currentService]);
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -296,11 +305,43 @@ const Index = () => {
                 <p className="text-soft-lavender font-manrope text-sm md:text-base">
                   Section {currentSection + 1} of {sections.length}
                 </p>
+                
+                {/* Service Tabs - Show when services are selected and not on service selection page */}
+                {formData.purchasedServices.length > 1 && currentSection > 0 && (
+                  <div className="mt-4">
+                    <p className="text-soft-lavender font-manrope text-sm mb-3">
+                      Currently answering for:
+                    </p>
+                    <Tabs value={currentService} onValueChange={setCurrentService}>
+                      <TabsList className="bg-deep-violet border border-purple-grape">
+                        {formData.purchasedServices.map((service) => (
+                          <TabsTrigger 
+                            key={service} 
+                            value={service}
+                            className="data-[state=active]:bg-neon-aqua data-[state=active]:text-charcoal-black text-soft-lavender"
+                          >
+                            {service}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                )}
               </div>
+
+              {/* Show current service indicator when multiple services */}
+              {formData.purchasedServices.length > 1 && currentSection > 0 && (
+                <div className="mb-4 p-3 rounded-lg bg-neon-aqua/10 border border-neon-aqua/30">
+                  <p className="text-neon-aqua font-manrope text-sm">
+                    <span className="font-semibold">Answering for:</span> {currentService}
+                  </p>
+                </div>
+              )}
 
               <CurrentSectionComponent
                 formData={formData}
                 updateFormData={updateFormData}
+                {...(currentSection > 0 && { currentService })}
               />
 
               {/* Navigation Buttons */}
