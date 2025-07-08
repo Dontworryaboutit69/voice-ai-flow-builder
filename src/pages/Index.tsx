@@ -150,11 +150,11 @@ const initialFormData: FormData = {
 
 const sections = [
   { id: 'services', title: 'Service Selection', component: ServiceSelection },
+  { id: 'basic-info', title: 'Basic Information', component: BasicInformation },
 ];
 
 const serviceSections = {
   'SMS AI': [
-    { id: 'sms-basic', title: 'Basic Information', component: BasicInformation },
     { id: 'sms-functionality', title: 'SMS Functionality', component: SMSFunctionality },
     { id: 'sms-intro', title: 'Intro Messages', component: SMSIntroMessages },
     { id: 'sms-flow', title: 'Qualification Flow', component: SMSFlow },
@@ -162,7 +162,6 @@ const serviceSections = {
     { id: 'sms-knowledge', title: 'Knowledge Base', component: SMSKnowledge },
   ],
   'Inbound Voice AI': [
-    { id: 'inbound-basic', title: 'Basic Information', component: BasicInformation },
     { id: 'inbound-purpose', title: 'Voice AI Purpose', component: VoiceAIPurpose },
     { id: 'inbound-process', title: 'Call Process & Flow', component: CallProcess },
     { id: 'inbound-qualification', title: 'Qualification Criteria', component: QualificationCriteria },
@@ -172,7 +171,6 @@ const serviceSections = {
     { id: 'inbound-preferences', title: 'Voice Preferences & Specifications', component: VoicePreferences }
   ],
   'Outbound Voice AI': [
-    { id: 'outbound-basic', title: 'Basic Information', component: BasicInformation },
     { id: 'outbound-purpose', title: 'Voice AI Purpose', component: VoiceAIPurpose },
     { id: 'outbound-process', title: 'Call Process & Flow', component: CallProcess },
     { id: 'outbound-qualification', title: 'Qualification Criteria', component: QualificationCriteria },
@@ -222,12 +220,14 @@ const Index = () => {
 
   // Get all sections that will be shown based on selected services
   const getAllApplicableSections = () => {
-    if (currentSection === 0) {
-      return sections; // Service selection only
+    if (formData.purchasedServices.length === 0) {
+      return [sections[0]]; // Service selection only
     }
     
-    // Combine all sections from selected services
-    const allSections = [];
+    // Start with service selection and basic info
+    const allSections = [...sections];
+    
+    // Add all service-specific sections
     formData.purchasedServices.forEach(service => {
       if (serviceSections[service]) {
         allSections.push(...serviceSections[service].map(section => ({
@@ -240,22 +240,45 @@ const Index = () => {
     return allSections;
   };
 
-  // Get current sections for the active service
-  const getCurrentSections = () => {
-    if (currentSection === 0) {
-      return sections; // Service selection
-    }
-    
-    if (currentService && serviceSections[currentService]) {
-      return serviceSections[currentService];
-    }
-    
-    return [];
-  };
-
   const allApplicableSections = getAllApplicableSections();
-  const currentSections = getCurrentSections();
-  const sectionIndex = currentSection === 0 ? 0 : currentSection - 1;
+  
+  const getCurrentSectionComponent = () => {
+    if (currentSection < sections.length) {
+      return sections[currentSection].component;
+    }
+    
+    // Find which service section we're in
+    let sectionCount = sections.length;
+    for (const service of formData.purchasedServices) {
+      const serviceSectionList = serviceSections[service] || [];
+      if (currentSection < sectionCount + serviceSectionList.length) {
+        const serviceSectionIndex = currentSection - sectionCount;
+        return serviceSectionList[serviceSectionIndex].component;
+      }
+      sectionCount += serviceSectionList.length;
+    }
+    
+    return sections[0].component;
+  };
+  
+  const getCurrentSectionTitle = () => {
+    if (currentSection < sections.length) {
+      return sections[currentSection].title;
+    }
+    
+    // Find which service section we're in
+    let sectionCount = sections.length;
+    for (const service of formData.purchasedServices) {
+      const serviceSectionList = serviceSections[service] || [];
+      if (currentSection < sectionCount + serviceSectionList.length) {
+        const serviceSectionIndex = currentSection - sectionCount;
+        return serviceSectionList[serviceSectionIndex].title;
+      }
+      sectionCount += serviceSectionList.length;
+    }
+    
+    return 'Loading...';
+  };
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -327,10 +350,16 @@ const Index = () => {
     navigate('/thank-you');
   };
 
-  const CurrentSectionComponent = currentSection === 0 
-    ? sections[0].component 
-    : (currentSections[sectionIndex] ? currentSections[sectionIndex].component : sections[0].component);
+  const CurrentSectionComponent = getCurrentSectionComponent();
   const progress = calculateProgress();
+
+  const getTotalSections = () => {
+    return allApplicableSections.length;
+  };
+
+  const getCurrentSectionNumber = () => {
+    return currentSection + 1;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-charcoal-black via-deep-violet to-purple-grape">
@@ -360,10 +389,7 @@ const Index = () => {
             <div className="flex justify-between text-xs md:text-sm text-soft-lavender mb-2 font-manrope">
               <span>Progress: {progress}% complete</span>
               <span>
-                {currentSection === 0 
-                  ? 'Step 1: Service Selection' 
-                  : `${currentService} - Section ${sectionIndex + 1} of ${currentSections.length}`
-                }
+                Section {getCurrentSectionNumber()} of {getTotalSections()}
               </span>
             </div>
             <div className="w-full bg-deep-violet rounded-full h-2 md:h-3 overflow-hidden">
@@ -411,35 +437,22 @@ const Index = () => {
               <ScrollArea className="h-64 lg:h-96">
                 <div className="space-y-2">
                   {allApplicableSections.map((section, index) => {
-                    const isCurrentSection = currentSection === 0 
-                      ? index === 0 
-                      : (currentSection > 0 && currentService === section.serviceName && 
-                         index - formData.purchasedServices.findIndex(s => s === currentService) * (serviceSections[currentService]?.length || 0) === sectionIndex);
+                    const isCurrentSection = currentSection === index;
                     
                     return (
-                      <div key={`${section.serviceName || 'service'}-${section.id}`}>
+                       <div key={`${(section as any).serviceName || 'general'}-${section.id}`}>
                         {/* Service header when starting a new service */}
-                        {section.serviceName && index > 0 && 
-                         allApplicableSections[index - 1]?.serviceName !== section.serviceName && (
+                        {(section as any).serviceName && index > 0 && 
+                         (allApplicableSections[index - 1] as any)?.serviceName !== (section as any).serviceName && (
                           <div className="mt-4 mb-2 px-2">
                             <div className="text-xs font-audiowide text-hot-magenta border-b border-hot-magenta/30 pb-1">
-                              {section.serviceName}
+                              {(section as any).serviceName}
                             </div>
                           </div>
                         )}
                         
                         <button
-                          onClick={() => {
-                            if (currentSection === 0) {
-                              setCurrentSection(index);
-                            } else if (section.serviceName) {
-                              setCurrentService(section.serviceName);
-                              const serviceIndex = formData.purchasedServices.findIndex(s => s === section.serviceName);
-                              setCurrentServiceIndex(serviceIndex);
-                              const sectionInService = serviceSections[section.serviceName]?.findIndex(s => s.id === section.id) || 0;
-                              setCurrentSection(sectionInService + 1);
-                            }
-                          }}
+                          onClick={() => setCurrentSection(index)}
                           className={`w-full text-left p-2 md:p-3 rounded-lg transition-all duration-300 font-manrope border text-xs md:text-sm ${
                             isCurrentSection
                               ? 'bg-neon-aqua text-charcoal-black border-neon-aqua font-semibold shadow-lg'
@@ -469,10 +482,10 @@ const Index = () => {
             <Card className="p-4 md:p-8 bg-charcoal-black/80 border-2 border-purple-grape backdrop-blur-sm">
               <div className="mb-6">
                 <h2 className="text-xl md:text-2xl font-audiowide text-neon-aqua mb-2 neon-text">
-                  {currentSection === 0 ? sections[0].title : (currentSections[sectionIndex] ? currentSections[sectionIndex].title : 'Loading...')}
+                  {getCurrentSectionTitle()}
                 </h2>
                 <p className="text-soft-lavender font-manrope text-sm md:text-base">
-                  {currentSection === 0 ? 'Step 1: Select your services' : `Section ${sectionIndex + 1} of ${currentSections.length}`}
+                  Section {getCurrentSectionNumber()} of {getTotalSections()}
                 </p>
                 
               </div>
@@ -494,25 +507,9 @@ const Index = () => {
                   Previous Section
                 </Button>
                 
-                {currentSection === 0 || currentSection < currentSections.length ? (
+                {currentSection < allApplicableSections.length - 1 ? (
                   <Button
-                    onClick={() => {
-                      if (currentSection === 0) {
-                        // Move from service selection to first section of first service
-                        setCurrentSection(1);
-                      } else if (currentSection < currentSections.length) {
-                        // Move to next section within current service
-                        setCurrentSection(currentSection + 1);
-                      } else {
-                        // Check if there are more services to complete
-                        const nextServiceIndex = currentServiceIndex + 1;
-                        if (nextServiceIndex < formData.purchasedServices.length) {
-                          setCurrentService(formData.purchasedServices[nextServiceIndex]);
-                          setCurrentServiceIndex(nextServiceIndex);
-                          setCurrentSection(1); // Start at first section of next service
-                        }
-                      }
-                    }}
+                    onClick={() => setCurrentSection(currentSection + 1)}
                     className="w-full sm:w-auto bg-neon-aqua text-charcoal-black hover:bg-hot-magenta hover:text-bright-white font-audiowide font-medium transition-all duration-300 shadow-lg"
                   >
                     {currentSection === 0 ? 'Start Form' : 'Next Section'}
@@ -520,20 +517,10 @@ const Index = () => {
                   </Button>
                 ) : (
                   <Button
-                    onClick={() => {
-                      // Check if there are more services to complete
-                      const nextServiceIndex = currentServiceIndex + 1;
-                      if (nextServiceIndex < formData.purchasedServices.length) {
-                        setCurrentService(formData.purchasedServices[nextServiceIndex]);
-                        setCurrentServiceIndex(nextServiceIndex);
-                        setCurrentSection(1); // Start at first section of next service
-                      } else {
-                        handleSubmit();
-                      }
-                    }}
+                    onClick={handleSubmit}
                     className="w-full sm:w-auto bg-gradient-to-r from-neon-aqua to-hot-magenta text-charcoal-black hover:from-hot-magenta hover:to-cyber-yellow font-audiowide font-medium transition-all duration-300 shadow-lg"
                   >
-                    {currentServiceIndex + 1 < formData.purchasedServices.length ? 'Next Service' : 'Submit Form'}
+                    Submit Form
                   </Button>
                 )}
               </div>
