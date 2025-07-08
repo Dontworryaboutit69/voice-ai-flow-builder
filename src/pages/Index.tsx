@@ -125,20 +125,42 @@ const initialFormData: FormData = {
 
 const sections = [
   { id: 'services', title: 'Service Selection', component: ServiceSelection },
-  { id: 'basic', title: 'Basic Information', component: BasicInformation },
-  { id: 'purpose', title: 'Voice AI Purpose', component: VoiceAIPurpose },
-  { id: 'process', title: 'Call Process & Flow', component: CallProcess },
-  { id: 'qualification', title: 'Qualification Criteria', component: QualificationCriteria },
-  { id: 'experience', title: 'Customer Experience', component: CustomerExperience },
-  { id: 'knowledge', title: 'Agent Knowledge', component: AgentKnowledge },
-  { id: 'metrics', title: 'Success Metrics & Integration', component: SuccessMetrics },
-  { id: 'preferences', title: 'Voice Preferences & Specifications', component: VoicePreferences }
 ];
+
+// Service-specific sections that will be dynamically shown
+const serviceSections = {
+  'SMS AI': [
+    { id: 'sms-basic', title: 'Basic Information', component: BasicInformation },
+    { id: 'sms-purpose', title: 'SMS AI Purpose', component: VoiceAIPurpose },
+    // Add more SMS-specific sections here
+  ],
+  'Inbound Voice AI': [
+    { id: 'inbound-basic', title: 'Basic Information', component: BasicInformation },
+    { id: 'inbound-purpose', title: 'Voice AI Purpose', component: VoiceAIPurpose },
+    { id: 'inbound-process', title: 'Call Process & Flow', component: CallProcess },
+    { id: 'inbound-qualification', title: 'Qualification Criteria', component: QualificationCriteria },
+    { id: 'inbound-experience', title: 'Customer Experience', component: CustomerExperience },
+    { id: 'inbound-knowledge', title: 'Agent Knowledge', component: AgentKnowledge },
+    { id: 'inbound-metrics', title: 'Success Metrics & Integration', component: SuccessMetrics },
+    { id: 'inbound-preferences', title: 'Voice Preferences & Specifications', component: VoicePreferences }
+  ],
+  'Outbound Voice AI': [
+    { id: 'outbound-basic', title: 'Basic Information', component: BasicInformation },
+    { id: 'outbound-purpose', title: 'Voice AI Purpose', component: VoiceAIPurpose },
+    { id: 'outbound-process', title: 'Call Process & Flow', component: CallProcess },
+    { id: 'outbound-qualification', title: 'Qualification Criteria', component: QualificationCriteria },
+    { id: 'outbound-experience', title: 'Customer Experience', component: CustomerExperience },
+    { id: 'outbound-knowledge', title: 'Agent Knowledge', component: AgentKnowledge },
+    { id: 'outbound-metrics', title: 'Success Metrics & Integration', component: SuccessMetrics },
+    { id: 'outbound-preferences', title: 'Voice Preferences & Specifications', component: VoicePreferences }
+  ]
+};
 
 const Index = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [currentSection, setCurrentSection] = useState(0);
   const [currentService, setCurrentService] = useState<string>('');
+  const [currentServiceIndex, setCurrentServiceIndex] = useState(0);
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -167,8 +189,25 @@ const Index = () => {
   useEffect(() => {
     if (formData.purchasedServices.length > 0 && !currentService) {
       setCurrentService(formData.purchasedServices[0]);
+      setCurrentServiceIndex(0);
     }
   }, [formData.purchasedServices, currentService]);
+
+  // Get current sections based on whether services are selected and which service is active
+  const getCurrentSections = () => {
+    if (currentSection === 0) {
+      return sections; // Service selection
+    }
+    
+    if (currentService && serviceSections[currentService]) {
+      return serviceSections[currentService];
+    }
+    
+    return [];
+  };
+
+  const currentSections = getCurrentSections();
+  const sectionIndex = currentSection === 0 ? 0 : currentSection - 1;
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -207,7 +246,9 @@ const Index = () => {
     navigate('/thank-you');
   };
 
-  const CurrentSectionComponent = sections[currentSection].component;
+  const CurrentSectionComponent = currentSection === 0 
+    ? sections[0].component 
+    : (currentSections[sectionIndex] ? currentSections[sectionIndex].component : sections[0].component);
   const progress = calculateProgress();
 
   return (
@@ -237,7 +278,12 @@ const Index = () => {
           <div className="max-w-2xl mx-auto mb-4 px-4">
             <div className="flex justify-between text-xs md:text-sm text-soft-lavender mb-2 font-manrope">
               <span>Progress: {progress}% complete</span>
-              <span>{currentSection + 1} of {sections.length} sections</span>
+              <span>
+                {currentSection === 0 
+                  ? 'Step 1: Service Selection' 
+                  : `${currentService} - Section ${sectionIndex + 1} of ${currentSections.length}`
+                }
+              </span>
             </div>
             <div className="w-full bg-deep-violet rounded-full h-2 md:h-3 overflow-hidden">
               <div 
@@ -265,15 +311,30 @@ const Index = () => {
           {/* Section Navigation */}
           <div className="w-full lg:w-80 flex-shrink-0 order-2 lg:order-1">
             <Card className="p-4 md:p-6 lg:sticky lg:top-4 bg-charcoal-black/80 border-2 border-purple-grape backdrop-blur-sm">
-              <h3 className="font-audiowide text-neon-aqua mb-4 neon-text text-sm md:text-base">Form Sections</h3>
+              <h3 className="font-audiowide text-neon-aqua mb-4 neon-text text-sm md:text-base">
+                {currentSection === 0 ? 'Form Sections' : `${currentService} Sections`}
+              </h3>
+              
+              {/* Show service indicator when working on specific service */}
+              {currentSection > 0 && currentService && (
+                <div className="mb-4 p-2 rounded-lg bg-neon-aqua/10 border border-neon-aqua/30">
+                  <p className="text-neon-aqua font-manrope text-xs">
+                    Working on: <span className="font-semibold">{currentService}</span>
+                  </p>
+                  <p className="text-soft-lavender font-manrope text-xs mt-1">
+                    Service {currentServiceIndex + 1} of {formData.purchasedServices.length}
+                  </p>
+                </div>
+              )}
+              
               <ScrollArea className="h-64 lg:h-96">
                 <div className="space-y-2">
-                  {sections.map((section, index) => (
+                  {currentSections.map((section, index) => (
                     <div key={section.id}>
                       <button
-                        onClick={() => setCurrentSection(index)}
+                        onClick={() => currentSection === 0 ? setCurrentSection(index) : setCurrentSection(index + 1)}
                         className={`w-full text-left p-2 md:p-3 rounded-lg transition-all duration-300 font-manrope border text-xs md:text-sm ${
-                          currentSection === index
+                          (currentSection === 0 && index === 0) || (currentSection > 0 && index === sectionIndex)
                             ? 'bg-neon-aqua text-charcoal-black border-neon-aqua font-semibold shadow-lg'
                             : 'bg-charcoal-black/60 border-purple-grape text-bright-white hover:bg-deep-violet hover:border-neon-aqua hover:text-bright-white'
                         }`}
@@ -287,7 +348,7 @@ const Index = () => {
                           )}
                         </div>
                       </button>
-                      {index < sections.length - 1 && <Separator className="my-2 bg-purple-grape" />}
+                      {index < currentSections.length - 1 && <Separator className="my-2 bg-purple-grape" />}
                     </div>
                   ))}
                 </div>
@@ -300,43 +361,13 @@ const Index = () => {
             <Card className="p-4 md:p-8 bg-charcoal-black/80 border-2 border-purple-grape backdrop-blur-sm">
               <div className="mb-6">
                 <h2 className="text-xl md:text-2xl font-audiowide text-neon-aqua mb-2 neon-text">
-                  {sections[currentSection].title}
+                  {currentSection === 0 ? sections[0].title : (currentSections[sectionIndex] ? currentSections[sectionIndex].title : 'Loading...')}
                 </h2>
                 <p className="text-soft-lavender font-manrope text-sm md:text-base">
-                  Section {currentSection + 1} of {sections.length}
+                  {currentSection === 0 ? 'Step 1: Select your services' : `Section ${sectionIndex + 1} of ${currentSections.length}`}
                 </p>
                 
-                {/* Service Tabs - Show when services are selected and not on service selection page */}
-                {formData.purchasedServices.length > 1 && currentSection > 0 && (
-                  <div className="mt-4">
-                    <p className="text-soft-lavender font-manrope text-sm mb-3">
-                      Currently answering for:
-                    </p>
-                    <Tabs value={currentService} onValueChange={setCurrentService}>
-                      <TabsList className="bg-deep-violet border border-purple-grape">
-                        {formData.purchasedServices.map((service) => (
-                          <TabsTrigger 
-                            key={service} 
-                            value={service}
-                            className="data-[state=active]:bg-neon-aqua data-[state=active]:text-charcoal-black text-soft-lavender"
-                          >
-                            {service}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
-                  </div>
-                )}
               </div>
-
-              {/* Show current service indicator when multiple services */}
-              {formData.purchasedServices.length > 1 && currentSection > 0 && (
-                <div className="mb-4 p-3 rounded-lg bg-neon-aqua/10 border border-neon-aqua/30">
-                  <p className="text-neon-aqua font-manrope text-sm">
-                    <span className="font-semibold">Answering for:</span> {currentService}
-                  </p>
-                </div>
-              )}
 
               <CurrentSectionComponent
                 formData={formData}
@@ -355,20 +386,46 @@ const Index = () => {
                   Previous Section
                 </Button>
                 
-                {currentSection < sections.length - 1 ? (
+                {currentSection === 0 || currentSection < currentSections.length ? (
                   <Button
-                    onClick={() => setCurrentSection(currentSection + 1)}
+                    onClick={() => {
+                      if (currentSection === 0) {
+                        // Move from service selection to first section of first service
+                        setCurrentSection(1);
+                      } else if (currentSection < currentSections.length) {
+                        // Move to next section within current service
+                        setCurrentSection(currentSection + 1);
+                      } else {
+                        // Check if there are more services to complete
+                        const nextServiceIndex = currentServiceIndex + 1;
+                        if (nextServiceIndex < formData.purchasedServices.length) {
+                          setCurrentService(formData.purchasedServices[nextServiceIndex]);
+                          setCurrentServiceIndex(nextServiceIndex);
+                          setCurrentSection(1); // Start at first section of next service
+                        }
+                      }
+                    }}
                     className="w-full sm:w-auto bg-neon-aqua text-charcoal-black hover:bg-hot-magenta hover:text-bright-white font-audiowide font-medium transition-all duration-300 shadow-lg"
                   >
-                    Next Section
+                    {currentSection === 0 ? 'Start Form' : 'Next Section'}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
                   <Button
-                    onClick={handleSubmit}
+                    onClick={() => {
+                      // Check if there are more services to complete
+                      const nextServiceIndex = currentServiceIndex + 1;
+                      if (nextServiceIndex < formData.purchasedServices.length) {
+                        setCurrentService(formData.purchasedServices[nextServiceIndex]);
+                        setCurrentServiceIndex(nextServiceIndex);
+                        setCurrentSection(1); // Start at first section of next service
+                      } else {
+                        handleSubmit();
+                      }
+                    }}
                     className="w-full sm:w-auto bg-gradient-to-r from-neon-aqua to-hot-magenta text-charcoal-black hover:from-hot-magenta hover:to-cyber-yellow font-audiowide font-medium transition-all duration-300 shadow-lg"
                   >
-                    Submit Form
+                    {currentServiceIndex + 1 < formData.purchasedServices.length ? 'Next Service' : 'Submit Form'}
                   </Button>
                 )}
               </div>
