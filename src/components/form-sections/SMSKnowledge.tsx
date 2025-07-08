@@ -34,23 +34,6 @@ const SMSKnowledge = ({ formData, updateFormData }: SMSKnowledgeProps) => {
             />
           </div>
 
-          <div>
-            <Label htmlFor="sms-website-url" className="text-bright-white font-manrope font-medium mb-3 block">
-              Website URL for Knowledge Base
-            </Label>
-            <Input
-              id="sms-website-url"
-              type="url"
-              value={formData.smsWebsiteUrl || ''}
-              onChange={(e) => updateFormData({ smsWebsiteUrl: e.target.value })}
-              placeholder="https://yourwebsite.com"
-              className="bg-charcoal-black/60 border-purple-grape text-bright-white placeholder:text-soft-lavender font-manrope"
-            />
-            <p className="text-xs text-soft-lavender mt-2 font-manrope">
-              The AI will read this website to create a comprehensive knowledge base about your business.
-            </p>
-          </div>
-
           <div className="bg-deep-violet/20 border border-neon-aqua/30 rounded-lg p-4">
             <h4 className="text-neon-aqua font-audiowide font-medium mb-3 text-sm">FAQ Example Format:</h4>
             <div className="space-y-2 text-xs text-soft-lavender font-manrope">
